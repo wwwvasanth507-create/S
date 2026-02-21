@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Create New Quiz</h2>
+        <form method="POST">
+            <div style="margin-bottom: 20px;">
+                <label>Quiz Title</label>
+                <input type="text" name="title" required placeholder="e.g. Week 1 Assessment">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label>Related Video (Optional)</label>
+                <select name="video_id"
+                    style="width: 100%; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 14px; color: white;">
+                    <option value="">-- No Video Link --</option>
+                    {% for video in videos %}
+                    <option value="{{ video.id }}">{{ video.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label>Assign to Class (Optional)</label>
+                <select name="classroom_id"
+                    style="width: 100%; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 14px; color: white;">
+                    <option value="">-- All Students (No Class Restriction) --</option>
+                    {% for cls in classes %}
+                    <option value="{{ cls.id }}">{{ cls.name }}</option>
+                    {% endfor %}
+                </select>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 6px 0 0 0;">
+                    If assigned to a class, only students in that class can see and take this quiz.
+                </p>
+            </div>
+
+            <button type="submit" class="btn">Create & Add Questions</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

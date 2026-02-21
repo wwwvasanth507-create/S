@@ -1,0 +1,764 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .dashboard-header {
+        margin-bottom: 40px;
+    }
+
+    .action-card {
+        background: var(--surface-color);
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s ease;
+    }
+
+    .action-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+    }
+
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 40px 0 24px 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-primary);
+    }
+
+    .video-card-teacher {
+        background: var(--surface-color);
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .video-card-teacher:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-5px);
+    }
+
+    .thumb-area {
+        height: 160px;
+        background: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .info-area {
+        padding: 20px;
+        flex: 1;
+    }
+
+    .p-card {
+        background: var(--surface-color);
+        border-radius: 18px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid var(--glass-border);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th,
+    td {
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+</style>
+
+<div class="dashboard-header">
+    <h1
+        style="margin:0; font-weight: 800; font-size: 2.2rem; background: linear-gradient(90deg, #fff, #bb86fc); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+        Teacher Dashboard</h1>
+    <p style="color: var(--text-secondary); margin-top: 8px;">Control center for your educational content and students.
+    </p>
+</div>
+
+<!-- Teacher Points Panel -->
+<div
+    style="background: linear-gradient(135deg, rgba(187,134,252,0.15), rgba(0,229,255,0.1)); border: 1px solid rgba(187,134,252,0.3); border-radius: 24px; padding: 28px 32px; margin-bottom: 40px; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: -40px; right: -20px; font-size: 120px; opacity: 0.06; font-weight: 900;">XP
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+        <!-- Total XP -->
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div
+                style="width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #bb86fc, #6200ea); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(187,134,252,0.3);">
+                <i class="material-icons" style="font-size: 28px; color: white;">stars</i>
+            </div>
+            <div>
+                <div
+                    style="font-size: 2rem; font-weight: 800; background: linear-gradient(90deg, #bb86fc, #00e5ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                    {{ teacher_stats.total_xp }} XP
+                </div>
+                <div style="color: var(--text-secondary); font-size: 0.85rem;">
+                    Level {{ (teacher_stats.total_xp // 500) + 1 }} Teacher
+                </div>
+            </div>
+        </div>
+
+        <!-- XP Progress to next level -->
+        <div style="flex: 1; min-width: 200px; max-width: 300px;">
+            <div
+                style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 6px;">
+                <span>Level {{ (teacher_stats.total_xp // 500) + 1 }}</span>
+                <span>{{ teacher_stats.total_xp % 500 }}/500 XP to next</span>
+            </div>
+            <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden;">
+                <div
+                    style="height: 100%; width: {{ (teacher_stats.total_xp % 500) / 5 }}%; background: linear-gradient(90deg, #bb86fc, #00e5ff); border-radius: 10px; transition: width 0.5s ease;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Breakdown -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08);">
+        <div style="text-align: center; padding: 8px;">
+            <i class="material-icons" style="color: #ff5252; font-size: 20px;">videocam</i>
+            <div style="font-size: 1.2rem; font-weight: 700; margin: 2px 0;">{{ teacher_stats.videos }}</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary);">Videos (+50 ea)</div>
+        </div>
+        <div style="text-align: center; padding: 8px;">
+            <i class="material-icons" style="color: #ff9800; font-size: 20px;">playlist_play</i>
+            <div style="font-size: 1.2rem; font-weight: 700; margin: 2px 0;">{{ teacher_stats.playlists }}</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary);">Playlists (+30 ea)</div>
+        </div>
+        <div style="text-align: center; padding: 8px;">
+            <i class="material-icons" style="color: #4caf50; font-size: 20px;">quiz</i>
+            <div style="font-size: 1.2rem; font-weight: 700; margin: 2px 0;">{{ teacher_stats.quizzes }}</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary);">Quizzes (+25 ea)</div>
+        </div>
+        <div style="text-align: center; padding: 8px;">
+            <i class="material-icons" style="color: #00e5ff; font-size: 20px;">school</i>
+            <div style="font-size: 1.2rem; font-weight: 700; margin: 2px 0;">{{ teacher_stats.classes }}</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary);">Classes (+40 ea)</div>
+        </div>
+        <div style="text-align: center; padding: 8px;">
+            <i class="material-icons" style="color: #e040fb; font-size: 20px;">chat</i>
+            <div style="font-size: 1.2rem; font-weight: 700; margin: 2px 0;">{{ teacher_stats.chat_messages }}</div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary);">Messages (+5 ea)</div>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Insights & Reports -->
+<div style="display: flex; gap: 15px; margin-bottom: 40px;">
+    <a href="{{ url_for('struggling_topics_report') }}" class="btn"
+        style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #ff5252, #d50000); box-shadow: 0 4px 15px rgba(255,82,82,0.3);">
+        <i class="material-icons">query_stats</i> Struggling Topics Report
+    </a>
+    <a href="{{ url_for('analytics') }}" class="btn btn-secondary"
+        style="flex: 1; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <i class="material-icons">visibility</i> Student Engagement Status
+    </a>
+</div>
+
+<div class="grid-container">
+    <!-- Add Student -->
+    <div class="action-card">
+        <h3 style="margin-top:0; color: var(--primary-color); display: flex; align-items: center; gap: 8px;">
+            <i class="material-icons">person_add</i> Add Student
+        </h3>
+        <form method="POST" action="{{ url_for('add_student') }}">
+            <input type="text" name="username" placeholder="Username" required style="background: var(--bg-color);">
+            <input type="password" name="password" placeholder="Password" required style="background: var(--bg-color);">
+            <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Create Account</button>
+        </form>
+    </div>
+
+    <!-- Create Playlist -->
+    <div class="action-card">
+        <h3 style="margin-top:0; color: var(--secondary-color); display: flex; align-items: center; gap: 8px;">
+            <i class="material-icons">playlist_add</i> New Playlist
+        </h3>
+        <form method="POST" action="{{ url_for('create_playlist') }}">
+            <input type="text" name="title" placeholder="Playlist Title" required style="background: var(--bg-color);">
+            <button type="submit" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Create
+                Playlist</button>
+        </form>
+    </div>
+
+    <!-- Create Class -->
+    <div class="action-card">
+        <h3 style="margin-top:0; color: #00e5ff; display: flex; align-items: center; gap: 8px;">
+            <i class="material-icons">school</i> New Class
+        </h3>
+        <form method="POST" action="{{ url_for('create_class') }}">
+            <input type="text" name="name" placeholder="Class Name (e.g. Grade 5A)" required
+                style="background: var(--bg-color);">
+            <button type="submit" class="btn" style="width: 100%; margin-top: 10px; background: #00b8d4;">Create
+                Class</button>
+        </form>
+    </div>
+
+    <!-- Upload Video Card -->
+    <div class="action-card">
+        <h3 style="margin-top:0; color: #ffeb3b; display: flex; align-items: center; gap: 8px;">
+            <i class="material-icons">cloud_upload</i> Upload Video
+        </h3>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="text" name="title" id="video-title" placeholder="Video Title" required
+                style="background: var(--bg-color);">
+            <div style="position: relative; margin: 10px 0;">
+                <input type="file" name="video_file" id="video-file" required accept="video/*"
+                    style="opacity: 0; position: absolute; z-index: -1;">
+                <button type="button" class="btn btn-secondary" style="width: 100%;"
+                    onclick="document.getElementById('video-file').click()">
+                    <i class="material-icons">attach_file</i> Choose Video
+                </button>
+            </div>
+
+            <div id="upload-progress-container"
+                style="display: none; margin: 15px 0; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <!-- Bar 1: Upload to Server -->
+                <div style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 0.8rem; color: #bb86fc; font-weight: 600;">1. Server Upload</span>
+                        <span id="upload-percentage"
+                            style="font-size: 0.8rem; font-weight: 700; color: #bb86fc;">0%</span>
+                    </div>
+                    <div
+                        style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                        <div id="upload-progress-bar"
+                            style="width: 0%; height: 100%; background: linear-gradient(90deg, #bb86fc, #00e5ff); transition: width 0.3s;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bar 2: HLS Processing -->
+                <div id="processing-progress-wrapper">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="font-size: 0.8rem; color: #00e5ff; font-weight: 600;">2. HLS Processing</span>
+                        <span id="processing-percentage"
+                            style="font-size: 0.8rem; font-weight: 700; color: #00e5ff;">0%</span>
+                    </div>
+                    <div
+                        style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                        <div id="processing-progress-bar"
+                            style="width: 0%; height: 100%; background: linear-gradient(90deg, #00e5ff, #00b8d4); transition: width 0.3s;">
+                        </div>
+                    </div>
+                </div>
+                <p id="system-status"
+                    style="font-size: 0.7rem; color: var(--text-secondary); margin: 8px 0 0 0; text-align: center;">
+                    Preparing...</p>
+            </div>
+
+            <button type="submit" id="upload-btn" class="btn" style="width: 100%;">Start Fast Upload</button>
+        </form>
+    </div>
+</div>
+
+<!-- Active Processing Tasks (Persistent) -->
+<div id="active-tasks-container" style="display: none;">
+    <h2 class="section-header"><i class="material-icons">auto_mode</i> Background Processing</h2>
+    <div id="active-tasks-list" class="grid-container">
+        <!-- Task items will be injected here -->
+    </div>
+</div>
+
+<h2 class="section-header"><i class="material-icons">video_library</i> Your Videos</h2>
+{% if videos %}
+<div class="grid-container">
+    {% for video in videos %}
+    <div class="video-card-teacher">
+        {% if video.thumbnail_path %}
+        <div class="thumb-area"
+            style="background-image: url('{{ url_for('static', filename=video.thumbnail_path) }}'); background-size: cover; background-position: center;">
+        </div>
+        {% else %}
+        <div class="thumb-area">
+            <i class="material-icons" style="font-size: 3.5rem; color: #fff; opacity: 0.2;">movie</i>
+        </div>
+        {% endif %}
+        <div class="info-area">
+            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 4px;">{{ video.title }}</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="color: var(--text-secondary); font-size: 0.85rem;">{{ video.upload_date.strftime('%b %d,
+                    %Y') }}</span>
+                {% if video.status == 'processing' %}
+                <span
+                    style="background: rgba(0,229,255,0.1); color: #00e5ff; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">{{
+                    video.processing_progress }}%</span>
+                {% elif video.status == 'failed' %}
+                <span
+                    style="background: rgba(255,82,82,0.1); color: #ff5252; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">FAILED</span>
+                {% endif %}
+            </div>
+
+            <form action="{{ url_for('add_to_playlist') }}" method="POST">
+                <input type="hidden" name="video_id" value="{{ video.id }}">
+                <select name="playlist_id" style="font-size: 0.85rem; padding: 10px; background: var(--bg-color);">
+                    <option value="">Add to Playlist...</option>
+                    {% for p in playlists %}
+                    <option value="{{ p.id }}">{{ p.title }}</option>
+                    {% endfor %}
+                </select>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    {% if video.status == 'completed' %}
+                    <a href="{{ url_for('watch_video', video_id=video.id) }}" class="btn"
+                        style="flex: 1; font-size: 0.85rem; padding: 10px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <i class="material-icons" style="font-size: 1.1rem;">play_arrow</i> Watch
+                    </a>
+                    {% else %}
+                    <button type="button" class="btn" disabled
+                        style="flex: 1; font-size: 0.85rem; padding: 10px; opacity: 0.5; background: #555;">
+                        <i class="material-icons" style="font-size: 1.1rem;">{% if video.status == 'failed' %}error{%
+                            else %}hourglass_empty{% endif %}</i>
+                        {% if video.status == 'failed' %}Failed{% else %}Processing{% endif %}
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="btn btn-secondary" style="flex: 1; font-size: 0.85rem; padding: 10px;"
+                        {% if video.status !='completed' %}disabled{% endif %}>Add</button>
+                    <button type="button" class="btn"
+                        style="background: rgba(255, 82, 82, 0.1); color: #ff5252; padding: 10px;"
+                        onclick="if(confirm('Delete video?')) document.getElementById('del-vid-{{ video.id }}').submit()">
+                        <i class="material-icons" style="font-size: 1.2rem;">delete</i>
+                    </button>
+                </div>
+            </form>
+            <form id="del-vid-{{ video.id }}" action="{{ url_for('delete_video', video_id=video.id) }}" method="POST"
+                style="display:none;"></form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+    <i class="material-icons" style="font-size: 3rem; margin-bottom: 10px;">video_call</i>
+    <p>You haven't uploaded any videos yet.</p>
+</div>
+{% endif %}
+
+<h2 class="section-header"><i class="material-icons">collections_bookmark</i> Your Playlists</h2>
+{% if playlists %}
+<div class="grid-container">
+    {% for playlist in playlists %}
+    <div class="p-card">
+        <div>
+            <div style="font-weight: 700; font-size: 1.1rem;">{{ playlist.title }}</div>
+            <div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">{{ playlist.videos|length }}
+                items</div>
+        </div>
+        <form action="{{ url_for('delete_playlist', playlist_id=playlist.id) }}" method="POST"
+            onsubmit="return confirm('Delete checklist?');">
+            <button type="submit" class="btn"
+                style="background: rgba(255, 82, 82, 0.1); color: #ff5252; padding: 10px;">
+                <i class="material-icons">delete_sweep</i>
+            </button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="section-header"><i class="material-icons">class</i> Your Classes</h2>
+<div class="grid-container">
+    {% for class in classes %}
+    <div class="card" style="border: 1px solid var(--glass-border);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <h3 style="margin: 0; color: #00e5ff;">{{ class.name }}</h3>
+            <form action="{{ url_for('delete_class', class_id=class.id) }}" method="POST"
+                onsubmit="return confirm('Delete this class and all its data?');" style="margin:0;">
+                <button type="submit"
+                    style="background: none; border: none; color: #ff5252; cursor: pointer; padding: 4px;">
+                    <i class="material-icons" style="font-size: 1.2rem;">delete</i>
+                </button>
+            </form>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 12px 0;">{{ class.students.count() }}
+            Students</p>
+
+        <!-- Chatroom Link -->
+        <a href="{{ url_for('chatroom', class_id=class.id) }}" class="btn btn-secondary"
+            style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; font-size: 0.85rem; margin-bottom: 12px; text-decoration: none;">
+            <i class="material-icons" style="font-size: 1.1rem;">chat</i> Open Chatroom
+        </a>
+
+        <!-- Add Student to Class -->
+        <form action="{{ url_for('add_student_to_class') }}" method="POST"
+            style="margin-bottom: 12px; display: flex; gap: 6px;">
+            <input type="hidden" name="class_id" value="{{ class.id }}">
+            <select name="student_id" required
+                style="flex: 1; padding: 6px; font-size: 0.8rem; background: var(--bg-color);">
+                <option value="">Add Student...</option>
+                {% for s in students %}
+                <option value="{{ s.id }}">{{ s.username }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn" style="padding: 6px 12px; font-size: 0.8rem;">+</button>
+        </form>
+
+        <ul style="list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto;">
+            {% for student in class.students %}
+            <li
+                style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="font-size: 0.9rem;">{{ student.username }}</span>
+                <form action="{{ url_for('remove_student_from_class') }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="class_id" value="{{ class.id }}">
+                    <input type="hidden" name="student_id" value="{{ student.id }}">
+                    <button type="submit"
+                        style="background: none; border: none; color: #ff5252; cursor: pointer;">&times;</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+</div>
+
+<h2 class="section-header"><i class="material-icons">quiz</i> Quizzes</h2>
+<div class="card" style="padding: 0; overflow: hidden;">
+    {% if quizzes %}
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Created Date</th>
+                <th style="text-align: right;">Reports</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for quiz in quizzes %}
+            <tr>
+                <td style="font-weight: 600;">{{ quiz.title }}</td>
+                <td style="color: var(--text-secondary); font-size: 0.9rem;">{{ quiz.created_at.strftime('%b %d, %Y') }}
+                </td>
+                <td style="text-align: right;">
+                    <a href="{{ url_for('quiz_report', quiz_id=quiz.id) }}" target="_blank" class="btn btn-secondary"
+                        style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none;">View Report (PDF)</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: var(--text-secondary);">No quizzes created yet. <a
+            href="{{ url_for('create_quiz') }}" style="color: var(--primary-color);">Create one</a></div>
+    {% endif %}
+</div>
+
+<h2 class="section-header"><i class="material-icons">fact_check</i> Instant Attendance Monitor</h2>
+{% if classes %}
+{% for cls in classes %}
+<div class="card" style="margin-bottom: 25px; padding: 25px;">
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;">
+        <h3 style="margin: 0; color: #00e5ff;">{{ cls.name }} <span
+                style="font-size: 0.8rem; color: var(--text-secondary); font-weight: normal; margin-left: 10px;">Starts
+                09:10 AM</span></h3>
+        <span
+            style="font-size: 0.85rem; background: rgba(0, 229, 255, 0.1); color: #00e5ff; padding: 4px 12px; border-radius: 20px;">
+            {{ cls.students.count() }} Students
+        </span>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Status Today</th>
+                    <th>Action</th>
+                    <th style="text-align: center;">Last 30 Days</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in cls.students %}
+                {% set today_record = student.attendance_records | selectattr('date', 'equalto', now_date) | first if
+                student.attendance_records else None %}
+                <tr>
+                    <td style="font-weight: 700;">{{ student.username }}</td>
+                    <td>
+                        {% if today_record %}
+                        {% if today_record.status == 'Present' %}
+                        <span style="color: #4caf50; display: flex; align-items: center; gap: 5px;"><i
+                                class="material-icons" style="font-size: 1rem;">check_circle</i> Present</span>
+                        {% elif today_record.status == 'Late' %}
+                        <span style="color: #ff9800; display: flex; align-items: center; gap: 5px;"><i
+                                class="material-icons" style="font-size: 1rem;">schedule</i> Late</span>
+                        {% else %}
+                        <span style="color: #ff5252; display: flex; align-items: center; gap: 5px;"><i
+                                class="material-icons" style="font-size: 1rem;">cancel</i> Absent</span>
+                        {% endif %}
+                        {% else %}
+                        <span style="color: var(--text-secondary); opacity: 0.5;">Pending...</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <form
+                                action="{{ url_for('mark_attendance', class_id=cls.id, student_id=student.id) }}?status=Present"
+                                method="POST" style="margin:0;">
+                                <button type="submit" class="btn"
+                                    style="padding: 6px 10px; font-size: 0.7rem; background: #4caf50;">
+                                    Present
+                                </button>
+                            </form>
+                            <form
+                                action="{{ url_for('mark_attendance', class_id=cls.id, student_id=student.id) }}?status=Late"
+                                method="POST" style="margin:0;">
+                                <button type="submit" class="btn"
+                                    style="padding: 6px 10px; font-size: 0.7rem; background: #ff9800;">
+                                    Late
+                                </button>
+                            </form>
+                            <form
+                                action="{{ url_for('mark_attendance', class_id=cls.id, student_id=student.id) }}?status=Absent"
+                                method="POST" style="margin:0;">
+                                <button type="submit" class="btn"
+                                    style="padding: 6px 10px; font-size: 0.7rem; background: #ff5252;">
+                                    Absent
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                    <td style="width: 250px;">
+                        <div style="display: flex; gap: 2px; justify-content: center;">
+                            {% for day in range(10) %}
+                            <div
+                                style="width: 12px; height: 12px; border-radius: 2px; background: {{ 'rgba(255,255,255,0.05)' if loop.index > 5 else ('#4caf50' if loop.index % 3 != 0 else '#ff9800') }};">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card" style="padding: 40px; text-align: center; color: var(--text-secondary);">
+    Create a class first to start monitoring attendance.
+</div>
+{% endif %}
+
+<h2 class="section-header"><i class="material-icons">groups</i> Enrolled Students</h2>
+<div class="card" style="padding: 0; overflow: hidden;">
+    {% if students %}
+    <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Joined Date</th>
+                <th style="text-align: right;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td style="font-weight: 600;">{{ student.username }}</td>
+                <td style="color: var(--text-secondary); font-size: 0.9rem;">{{ student.created_at.strftime('%b %d, %Y')
+                    }}</td>
+                <td style="text-align: right;">
+                    <div style="display: flex; gap: 8px; justify-content: flex-end; align-items: center;">
+                        <form action="{{ url_for('change_student_password') }}" method="POST"
+                            style="display: flex; gap: 4px;">
+                            <input type="hidden" name="student_id" value="{{ student.id }}">
+                            <input type="password" name="new_password" placeholder="New Password" required
+                                style="width: 120px; margin: 0; padding: 6px 10px; font-size: 0.8rem; background: var(--bg-color);">
+                            <button type="submit" class="btn btn-secondary"
+                                style="padding: 6px 12px; font-size: 0.8rem;">Reset</button>
+                        </form>
+                        <form action="{{ url_for('delete_student', student_id=student.id) }}" method="POST"
+                            onsubmit="return confirm('Permanently delete student {{ student.username }}?');">
+                            <button type="submit" class="btn"
+                                style="background: rgba(255, 82, 82, 0.2); color: #ff5252; padding: 6px 10px; font-size: 0.8rem;">
+                                <i class="material-icons" style="font-size: 1rem;">delete</i>
+                            </button>
+                        </form>
+                        <a href="{{ url_for('monthly_report', student_id=student.id) }}" class="btn btn-secondary"
+                            style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; background: rgba(124, 77, 255, 0.1); color: #bb86fc;">
+                            Report (PDF)
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 40px; text-align: center; color: var(--text-secondary);">No students registered yet.</div>
+    {% endif %}
+</div>
+
+<script>
+    const processingTasks = new Set();
+
+    // Check for existing processing tasks on Load
+    document.addEventListener('DOMContentLoaded', function () {
+        checkProcessingVideos();
+        // Periodically refresh processing status
+        setInterval(checkProcessingVideos, 3000);
+    });
+
+    async function checkProcessingVideos() {
+        try {
+            const response = await fetch('/api/teacher/processing_videos');
+            const videos = await response.json();
+
+            const list = document.getElementById('active-tasks-list');
+            const container = document.getElementById('active-tasks-container');
+
+            if (videos.length === 0) {
+                if (!processingTasks.size) container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            // Sync current tasks
+            const serverVideoIds = new Set(videos.map(v => v.id));
+
+            videos.forEach(video => {
+                let taskEl = document.getElementById(`task-${video.id}`);
+                if (!taskEl) {
+                    taskEl = document.createElement('div');
+                    taskEl.id = `task-${video.id}`;
+                    taskEl.className = 'action-card';
+                    taskEl.style.borderLeft = '4px solid #00e5ff';
+                    list.appendChild(taskEl);
+                }
+
+                taskEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong style="color: #fff;">${video.title}</strong>
+                        <span style="font-size: 0.7rem; background: rgba(0,229,255,0.1); color: #00e5ff; padding: 2px 8px; border-radius: 10px; text-transform: uppercase;">Processing</span>
+                    </div>
+                    <div style="margin-bottom: 4px; display: flex; justify-content: space-between;">
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);">HLS Conversion</span>
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #00e5ff;">${video.progress}%</span>
+                    </div>
+                    <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden;">
+                        <div style="width: ${video.progress}%; height: 100%; background: #00e5ff; transition: width 0.5s ease;"></div>
+                    </div>
+                    <p style="font-size: 0.65rem; color: var(--text-secondary); margin: 8px 0 0 0;">The server is converting your video to HLS. You can leave this page.</p>
+                `;
+            });
+
+            // Remove tasks that are no longer processing
+            Array.from(list.children).forEach(child => {
+                const id = parseInt(child.id.split('-')[1]);
+                if (!serverVideoIds.has(id)) {
+                    // Task finished!
+                    child.style.opacity = '0.5';
+                    child.innerHTML = `<p style="text-align:center; padding: 20px;">Task Complete! Refreshing library...</p>`;
+                    setTimeout(() => {
+                        child.remove();
+                        if (list.children.length === 0) {
+                            window.location.reload(); // Refresh to show new video in list
+                        }
+                    }, 2000);
+                }
+            });
+
+        } catch (e) {
+            console.error("Status check failed", e);
+        }
+    }
+
+    document.getElementById('upload-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('video-file');
+        const titleInput = document.getElementById('video-title');
+        const btn = document.getElementById('upload-btn');
+        const progressContainer = document.getElementById('upload-progress-container');
+        const uploadBar = document.getElementById('upload-progress-bar');
+        const uploadPercentageText = document.getElementById('upload-percentage');
+        const procBar = document.getElementById('processing-progress-bar');
+        const procPercentageText = document.getElementById('processing-percentage');
+        const systemStatus = document.getElementById('system-status');
+
+        if (!fileInput.files[0]) {
+            alert('Please select a video file.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('video_file', fileInput.files[0]);
+        formData.append('title', titleInput.value);
+
+        const xhr = new XMLHttpRequest();
+        progressContainer.style.display = 'block';
+        btn.disabled = true;
+        btn.innerText = 'Upload In Progress...';
+        systemStatus.innerText = 'Uploading to server (PC)...';
+
+        xhr.upload.addEventListener('progress', function (e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                uploadBar.style.width = percent + '%';
+                uploadPercentageText.innerText = percent + '%';
+                if (percent === 100) {
+                    systemStatus.innerText = 'Upload complete! Starting processing...';
+                    systemStatus.style.color = '#4caf50';
+                }
+            }
+        });
+
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                systemStatus.innerText = 'Success! Video is now being processed in background.';
+
+                // Clear form but keep progress shown for a bit
+                titleInput.value = '';
+                fileInput.value = '';
+
+                // Auto-trigger polling
+                checkProcessingVideos();
+
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                    btn.disabled = false;
+                    btn.innerText = 'Start Another Upload';
+                    uploadBar.style.width = '0%';
+                    uploadPercentageText.innerText = '0%';
+                }, 3000);
+
+            } else {
+                alert('Upload failed: ' + (xhr.responseText || 'Internal Error'));
+                btn.disabled = false;
+                btn.innerText = 'Retry Upload';
+                systemStatus.innerText = 'Error occurred.';
+                systemStatus.style.color = '#ff5252';
+            }
+        };
+
+        xhr.onerror = function () {
+            alert('Network error during upload.');
+            btn.disabled = false;
+        };
+
+        xhr.open('POST', "{{ url_for('upload_video') }}", true);
+        xhr.send(formData);
+    });
+</script>
+{% endblock %}

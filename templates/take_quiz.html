@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <h1 style="margin-top: 0;">{{ quiz.title }}</h1>
+    <p style="color: var(--text-secondary); margin-bottom: 30px;">Answer all questions to complete the quiz.</p>
+
+    <form method="POST">
+        {% for q in quiz.questions %}
+        <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
+            <h3 style="font-size: 1.1rem; margin-bottom: 16px;">{{ loop.index }}. {{ q.text }}</h3>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="A" required>
+                    <span>{{ q.option_a }}</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="B">
+                    <span>{{ q.option_b }}</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="C">
+                    <span>{{ q.option_c }}</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="D">
+                    <span>{{ q.option_d }}</span>
+                </label>
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn" style="width: 100%;">Submit Quiz</button>
+    </form>
+</div>
+{% endblock %}

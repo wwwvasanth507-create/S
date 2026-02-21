@@ -1,0 +1,357 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .chat-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .chat-messages {
+        background: var(--surface-color);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 24px;
+        min-height: 400px;
+        max-height: 550px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        scroll-behavior: smooth;
+    }
+
+    .chat-bubble {
+        max-width: 75%;
+        padding: 12px 18px;
+        border-radius: 18px;
+        position: relative;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .chat-bubble.own {
+        align-self: flex-end;
+        background: linear-gradient(135deg, var(--primary-color), #7c4dff);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble.other {
+        align-self: flex-start;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--glass-border);
+        border-bottom-left-radius: 4px;
+    }
+
+    .chat-bubble.teacher-msg {
+        background: rgba(255, 152, 0, 0.12);
+        border: 1px solid rgba(255, 152, 0, 0.3);
+    }
+
+    .chat-bubble .chat-user {
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 4px;
+        opacity: 0.8;
+    }
+
+    .chat-bubble .chat-user.is-teacher {
+        color: #ff9800;
+    }
+
+    .chat-bubble .chat-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        word-wrap: break-word;
+    }
+
+    .chat-bubble .chat-time {
+        font-size: 0.7rem;
+        opacity: 0.5;
+        text-align: right;
+        margin-top: 6px;
+    }
+
+    .chat-bubble .delete-btn {
+        position: absolute;
+        top: 4px;
+        right: 8px;
+        background: none;
+        border: none;
+        color: #ff5252;
+        cursor: pointer;
+        font-size: 0.7rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    .chat-bubble:hover .delete-btn {
+        opacity: 1;
+    }
+
+    .chat-input-area {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .chat-input-area input {
+        flex: 1;
+        border-radius: 50px;
+        padding: 14px 24px;
+        font-size: 0.95rem;
+        background: var(--surface-color);
+        border: 1px solid var(--glass-border);
+    }
+
+    .chat-input-area button {
+        border-radius: 50px;
+        padding: 14px 28px;
+        font-weight: 700;
+    }
+
+    .empty-chat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+        color: var(--text-secondary);
+        text-align: center;
+    }
+
+    .empty-chat i {
+        font-size: 4rem;
+        opacity: 0.15;
+        margin-bottom: 16px;
+    }
+
+    .online-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(76, 175, 80, 0.1);
+        color: #4caf50;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .online-badge::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: #4caf50;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.3;
+        }
+    }
+</style>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <div>
+            <h1 style="margin: 0; font-weight: 800; font-size: 1.8rem;">
+                <i class="material-icons"
+                    style="color: var(--primary-color); vertical-align: middle; margin-right: 8px;">chat</i>
+                {{ classroom.name }} - Chatroom
+            </h1>
+            <p style="color: var(--text-secondary); margin: 6px 0 0 0; font-size: 0.9rem;">
+                {{ classroom.students.count() }} students enrolled
+                {% if classroom.teacher %}
+                &bull; Teacher: <span style="color: var(--primary-color);">{{ classroom.teacher.username }}</span>
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <span class="online-badge">Live Chat</span>
+        </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="chat-bubble {{ 'own' if msg.user_id == current_user.id else 'other' }} {{ 'teacher-msg' if msg.user.role == 'teacher' else '' }}"
+            id="msg-{{ msg.id }}">
+            <div class="chat-user {{ 'is-teacher' if msg.user.role == 'teacher' else '' }}">
+                {{ msg.user.username }}
+                {% if msg.user.role == 'teacher' %}
+                <span
+                    style="font-size: 0.65rem; background: rgba(255,152,0,0.2); padding: 1px 6px; border-radius: 4px; margin-left: 4px;">TEACHER</span>
+                {% endif %}
+            </div>
+            <div class="chat-text">{{ msg.content }}</div>
+            <div class="chat-time">{{ msg.timestamp.strftime('%I:%M %p') }}</div>
+            {% if current_user.role == 'teacher' and classroom.teacher_id == current_user.id %}
+            <button class="delete-btn" onclick="deleteMessage({{ msg.id }})" title="Delete message">
+                <i class="material-icons" style="font-size: 0.9rem;">delete</i>
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-chat" id="emptyChat">
+            <i class="material-icons">forum</i>
+            <p>No messages yet. Start the conversation!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off"
+            onkeydown="if(event.key==='Enter') sendMessage();">
+        <button class="btn" onclick="sendMessage()">
+            <i class="material-icons" style="vertical-align: middle;">send</i> Send
+        </button>
+    </div>
+</div>
+
+<script>
+    const classId = {{ classroom.id }};
+    const currentUserId = {{ current_user.id }};
+    const currentUserRole = '{{ current_user.role }}';
+    const isTeacherOwner = {{ 'true' if current_user.role == 'teacher' and classroom.teacher_id == current_user.id else 'false' }};
+    let lastMessageId = 0;
+
+    // Initialize last message ID
+    const allBubbles = document.querySelectorAll('.chat-bubble');
+    if (allBubbles.length > 0) {
+        const lastBubble = allBubbles[allBubbles.length - 1];
+        const idStr = lastBubble.id.replace('msg-', '');
+        lastMessageId = parseInt(idStr) || 0;
+    }
+
+    // Scroll to bottom on load
+    const chatBox = document.getElementById('chatMessages');
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const content = input.value.trim();
+        if (!content) return;
+
+        input.value = '';
+        input.focus();
+
+        fetch(`/api/chatroom/${classId}/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: content })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    appendMessage(data, true);
+                    lastMessageId = data.id;
+                }
+            });
+    }
+
+    function appendMessage(msg, isOwn) {
+        // Remove empty state
+        const empty = document.getElementById('emptyChat');
+        if (empty) empty.remove();
+
+        const bubble = document.createElement('div');
+        const isTeacher = msg.role === 'teacher';
+        bubble.className = `chat-bubble ${isOwn ? 'own' : 'other'} ${isTeacher ? 'teacher-msg' : ''}`;
+        bubble.id = `msg-${msg.id}`;
+
+        let deleteBtn = '';
+        if (isTeacherOwner) {
+            deleteBtn = `<button class="delete-btn" onclick="deleteMessage(${msg.id})" title="Delete message">
+                <i class="material-icons" style="font-size: 0.9rem;">delete</i>
+            </button>`;
+        }
+
+        bubble.innerHTML = `
+            <div class="chat-user ${isTeacher ? 'is-teacher' : ''}">
+                ${msg.username}
+                ${isTeacher ? '<span style="font-size:0.65rem;background:rgba(255,152,0,0.2);padding:1px 6px;border-radius:4px;margin-left:4px;">TEACHER</span>' : ''}
+            </div>
+            <div class="chat-text">${escapeHtml(msg.content)}</div>
+            <div class="chat-time">${msg.timestamp}</div>
+            ${deleteBtn}
+        `;
+
+        chatBox.appendChild(bubble);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function deleteMessage(msgId) {
+        if (!confirm('Delete this message?')) return;
+        fetch(`/api/chatroom/delete_message/${msgId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const el = document.getElementById(`msg-${msgId}`);
+                    if (el) {
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateX(100px)';
+                        el.style.transition = 'all 0.3s ease';
+                        setTimeout(() => el.remove(), 300);
+                    }
+                }
+            });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Poll for new messages every 3 seconds
+    setInterval(function () {
+        fetch(`/api/chatroom/${classId}/messages?after=${lastMessageId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.messages && data.messages.length > 0) {
+                    for (const msg of data.messages) {
+                        // Only append if not already in DOM
+                        if (!document.getElementById(`msg-${msg.id}`)) {
+                            appendMessage(msg, msg.user_id === currentUserId);
+                        }
+                        lastMessageId = Math.max(lastMessageId, msg.id);
+                    }
+                }
+            });
+    }, 3000);
+</script>
+{% endblock %}

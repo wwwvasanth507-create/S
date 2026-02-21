@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 85vh;
+        padding: 20px;
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 440px;
+        background: var(--surface-color);
+        border-radius: 30px;
+        padding: 50px;
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .login-card::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(124, 77, 255, 0.05) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .brand-logo {
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        box-shadow: 0 8px 16px rgba(124, 77, 255, 0.3);
+    }
+
+    .input-group {
+        margin-bottom: 24px;
+        position: relative;
+    }
+
+    .input-group label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+
+    .input-group input,
+    .input-group select {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        padding: 14px 20px;
+        border-radius: 12px;
+        color: #fff;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .input-group input:focus {
+        border-color: var(--primary-color);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.1);
+        outline: none;
+    }
+</style>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="brand-logo">
+                <i class="material-icons" style="font-size: 32px; color: #fff;">school</i>
+            </div>
+            <h2 style="margin: 0; font-weight: 800; font-size: 2rem; color: #fff;">Welcome Back</h2>
+            <p style="color: var(--text-secondary); margin-top: 10px; font-size: 0.95rem;">Sign in to continue your
+                journey.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" name="username" required placeholder="Your unique ID" autocomplete="username">
+            </div>
+
+            <div class="input-group">
+                <label>Security Key</label>
+                <input type="password" name="password" required placeholder="Enter password"
+                    autocomplete="current-password">
+            </div>
+
+            <div class="input-group">
+                <label>Access Role (Optional)</label>
+                <select name="role">
+                    <option value="">Auto-detect Role</option>
+                    <option value="student">Student Account</option>
+                    <option value="teacher">Staff / Teacher</option>
+                    <option value="admin">System Admin</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn"
+                style="width: 100%; padding: 16px; font-weight: 700; font-size: 1.1rem; margin-top: 10px; border-radius: 15px;">
+                Authenticate
+            </button>
+
+            <p style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; margin-top: 30px;">
+                Secure campus access &bull; Encrypted Sessions
+            </p>
+        </form>
+    </div>
+</div>
+{% endblock %}

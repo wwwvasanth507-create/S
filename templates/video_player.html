@@ -1,0 +1,295 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .video-view-container {
+        display: flex;
+        gap: 30px;
+    }
+
+    .video-main {
+        flex: 3;
+        min-width: 0;
+    }
+
+    .video-sidebar {
+        flex: 1;
+        min-width: 320px;
+    }
+
+    @media (max-width: 1200px) {
+        .video-view-container {
+            flex-direction: column;
+        }
+
+        .video-sidebar {
+            min-width: 100%;
+        }
+    }
+
+    .related-card {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 20px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .related-card:hover {
+        transform: translateX(5px);
+    }
+</style>
+
+<div class="video-view-container">
+
+    <!-- Main Video Area -->
+    <div class="video-main">
+        <video id="video-player" controls preload="auto" width="100%" height="auto" class="card"
+            style="aspect-ratio: 16/9; background: #000; padding: 0; overflow: hidden; border-radius: 24px;">
+            <source src="{{ url_for('static', filename=video.hls_playlist_path) }}" type="application/x-mpegURL">
+        </video>
+
+        <script>
+            // Autoplay setup - supports both HLS and direct video
+            var videoElement = document.getElementById('video-player');
+            var videoSrc = "{{ url_for('static', filename=video.hls_playlist_path) }}";
+            var isHLS = videoSrc.endsWith('.m3u8');
+
+            if (isHLS && typeof Hls !== 'undefined' && Hls.isSupported()) {
+                var hls = new Hls();
+                hls.loadSource(videoSrc);
+                hls.attachMedia(videoElement);
+            } else if (isHLS && videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+                videoElement.src = videoSrc;
+            } else {
+                // Direct video file (mp4, mov, etc.)
+                videoElement.src = videoSrc;
+            }
+
+            // ---- Video Locking System ----
+            {% if settings %}
+            {% if settings.lock_video_speed %}
+            // Lock playback speed to 1x
+            videoElement.playbackRate = 1.0;
+            videoElement.addEventListener('ratechange', function () {
+                if (videoElement.playbackRate !== 1.0) {
+                    videoElement.playbackRate = 1.0;
+                }
+            });
+            // Hide speed controls via CSS overlay
+            var lockNotice = document.createElement('div');
+            lockNotice.innerHTML = '<i class="material-icons" style="font-size:14px;vertical-align:middle;">lock</i> Speed locked to 1x';
+            lockNotice.style.cssText = 'position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.8);color:#ff9800;padding:6px 12px;border-radius:8px;font-size:0.75rem;z-index:10;pointer-events:none;';
+            videoElement.parentElement.style.position = 'relative';
+            videoElement.parentElement.appendChild(lockNotice);
+            {% endif %}
+
+            {% if settings.lock_video_skipping %}
+            // Prevent skipping forward
+            var lastValidTime = 0;
+            var maxWatched = 0;
+            videoElement.addEventListener('timeupdate', function () {
+                if (!videoElement.seeking) {
+                    lastValidTime = videoElement.currentTime;
+                    if (videoElement.currentTime > maxWatched) {
+                        maxWatched = videoElement.currentTime;
+                    }
+                }
+            });
+            videoElement.addEventListener('seeking', function () {
+                // Only prevent forward seeking past what has been watched
+                if (videoElement.currentTime > maxWatched + 1) {
+                    videoElement.currentTime = maxWatched;
+                }
+            });
+            // Show skip lock notice
+            var skipNotice = document.createElement('div');
+            skipNotice.innerHTML = '<i class="material-icons" style="font-size:14px;vertical-align:middle;">lock</i> Forward skipping disabled';
+            skipNotice.style.cssText = 'position:absolute;top:' + ({{ 'true' if settings.lock_video_speed else 'false' }} ?'42px' : '10px') + ';right:10px;background:rgba(0,0,0,0.8);color:#ff9800;padding:6px 12px;border-radius:8px;font-size:0.75rem;z-index:10;pointer-events:none;';
+            videoElement.parentElement.style.position = 'relative';
+            videoElement.parentElement.appendChild(skipNotice);
+            {% endif %}
+            {% endif %}
+
+            // Analytics Tracking
+            let viewId = null;
+            const videoId = {{ video.id| tojson }};
+
+            // Start tracking when video plays
+            videoElement.addEventListener('play', function () {
+                if (!viewId) {
+                    fetch('/api/analytics/start', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ video_id: videoId })
+                    })
+                        .then(response => response.json())
+                        .then(data => { viewId = data.view_id; });
+                }
+            });
+
+            // Update duration periodically
+            setInterval(function () {
+                if (viewId && !videoElement.paused) {
+                    fetch('/api/analytics/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            view_id: viewId,
+                            duration: videoElement.currentTime,
+                            total_duration: videoElement.duration || 0
+                        })
+                    });
+                }
+            }, 5000);
+        </script>
+
+        <div style="margin-top: 24px;">
+            <h1 style="font-size: 1.8rem; margin: 0 0 8px 0; font-weight: 700;">{{ video.title }}</h1>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="avatar" style="width: 32px; height: 32px; font-size: 0.85rem;">{{
+                    video.uploader.username[0].upper() }}</div>
+                <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">
+                    Uploaded by <span style="color: var(--primary-color); font-weight: 600;">{{ video.uploader.username
+                        }}</span>
+                    &bull; {{ video.upload_date.strftime('%B %d, %Y') }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="card" style="margin-top: 40px;">
+            <h3 style="margin-top: 0; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                <i class="material-icons">forum</i> Comments
+            </h3>
+
+            <form id="comment-form" style="margin-bottom: 32px;">
+                <textarea id="comment-content" placeholder="Add a public comment..." rows="3" required
+                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);"></textarea>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn">Post Comment</button>
+                </div>
+            </form>
+
+            <div id="comments-list">
+                {% for comment in comments recursive %}
+                <div class="comment"
+                    style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border); margin-left: {{ '48px' if comment.parent_id else '0' }};">
+                    <div style="display: flex; gap: 14px; margin-bottom: 8px; align-items: center;">
+                        <div class="avatar" style="width: 34px; height: 34px; font-size: 0.85rem; border-radius: 10px;">
+                            {{
+                            comment.author.username[0].upper() }}</div>
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: 700; font-size: 0.95rem;">{{ comment.author.username }}</span>
+                            <span style="color: var(--text-secondary); font-size: 0.75rem;">{{
+                                comment.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                        <button onclick="toggleReply('{{ comment.id }}')"
+                            style="background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.85rem; font-weight: 600; margin-left: 10px;">Reply</button>
+                    </div>
+                    <p style="margin: 0; padding-left: 48px; color: #ddd; line-height: 1.6;">{{ comment.content }}</p>
+
+                    <!-- Reply Form (Hidden) -->
+                    <div id="reply-form-{{ comment.id }}" style="display: none; margin-left: 48px; margin-top: 16px;">
+                        <form onsubmit="postReply(event, '{{ comment.id }}')" style="display: flex; gap: 12px;">
+                            <input type="text" id="reply-input-{{ comment.id }}" placeholder="Write a reply..." required
+                                style="flex: 1; margin: 0; background: rgba(255,255,255,0.03);">
+                            <button type="submit" class="btn"
+                                style="padding: 10px 20px; font-size: 0.85rem;">Reply</button>
+                        </form>
+                    </div>
+
+                    {% if comment.replies %}
+                    <div style="margin-top: 20px;">
+                        {{ loop(comment.replies) }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar / Recommendations -->
+    <div class="video-sidebar">
+        <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 1.2rem; font-weight: 700;">Up Next</h3>
+        {% for related in related_videos %}
+        <a href="{{ url_for('watch_video', video_id=related.id) }}" style="text-decoration: none; color: inherit;">
+            <div class="related-card">
+                <div
+                    style="width: 160px; height: 90px; background: #111; border-radius: 12px; overflow: hidden; flex-shrink: 0;">
+                    <div
+                        style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #000);">
+                        <i class="material-icons"
+                            style="font-size: 2.2rem; color: var(--primary-color); opacity: 0.6;">play_circle_filled</i>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div
+                        style="font-weight: 600; font-size: 0.95rem; line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{
+                        related.title }}</div>
+                    <div
+                        style="color: var(--text-secondary); font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+                        <i class="material-icons" style="font-size: 0.9rem;">person</i>
+                        {{ related.uploader.username }}
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script>
+    const currentVideoId = {{ video.id| tojson }};
+
+    function toggleReply(commentId) {
+        const form = document.getElementById(`reply-form-${commentId}`);
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function postReply(event, parentId) {
+        event.preventDefault();
+        const content = document.getElementById(`reply-input-${parentId}`).value;
+
+        fetch('/api/comment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                video_id: currentVideoId,
+                content: content,
+                parent_id: parentId
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+    }
+
+    document.getElementById('comment-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const contentInput = document.getElementById('comment-content');
+        const content = contentInput.value;
+
+        fetch('/api/comment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                video_id: currentVideoId,
+                content: content
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+    });
+</script>
+{% endblock %}

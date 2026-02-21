@@ -1,0 +1,5 @@
+static/hls/
+*.ts
+*.m3u8
+__pycache__/
+*.db
